@@ -121,15 +121,7 @@ li.appendChild(span);
 
     if (item.done) li.classList.add('done');
 
-    // toggle done
-    li.onclick = async () => {
-      await supabaseClient
-        .from('shopping_list')
-        .update({ done: !item.done })
-        .eq('id', item.id);
-
-      loadItems();
-    };
+    
 
     // drag start
     li.ondragstart = (e) => {
