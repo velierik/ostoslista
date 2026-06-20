@@ -121,7 +121,7 @@ async function updateOrder() {
   for (let i = 0; i < items.length; i++) {
     await supabaseClient
       .from('shopping_list')
-      .update({ order_index: i })
+      .update({ position: i })
       .eq('id', items[i].id);
   }
 }
@@ -139,7 +139,7 @@ async function addItem() {
         name: name,
         done: false,
         category: currentCategory,
-        order_index: items.length
+        position: items.length
       }
     ]);
 
