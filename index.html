@@ -53,7 +53,7 @@ async function loadItems() {
     .from('shopping_list')
     .select('*')
     .eq('category', currentCategory)
-    .order('order_index', { ascending: true });
+    .order('position', { ascending: true });
 
   if (error) {
     console.error(error);
