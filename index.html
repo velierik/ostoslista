@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta charset="UTF-8">
   <title>Ostoslista</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     body { font-family: Arial; padding: 20px; }
     button { margin: 5px; padding: 8px; }
@@ -33,9 +35,8 @@
 
 <script>
 const SUPABASE_URL = "https://nunttyodyavjjaswwskd.supabase.co" ;	
- const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
- 
-
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
+  
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentCategory = "Ruokakauppa";
