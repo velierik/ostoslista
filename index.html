@@ -49,7 +49,7 @@ let items = [];
 // 🔹 Lataa data
 async function loadItems() {
   const { data, error } = await supabaseClient
-    .from('ostoslista')
+    .from('shopping_list')
     .select('*')
     .eq('category', currentCategory)
     .order('order_index', { ascending: true });
@@ -78,7 +78,7 @@ function render() {
     // toggle done
     li.onclick = async () => {
       await supabaseClient
-        .from('ostoslista')
+        .from('shopping_list')
         .update({ done: !item.done })
         .eq('id', item.id);
 
@@ -119,7 +119,7 @@ function render() {
 async function updateOrder() {
   for (let i = 0; i < items.length; i++) {
     await supabaseClient
-      .from('ostoslista')
+      .from('shopping_list')
       .update({ order_index: i })
       .eq('id', items[i].id);
   }
@@ -132,7 +132,7 @@ async function addItem() {
   if (!name) return;
 
   await supabaseClient
-    .from('ostoslista')
+    .from('shopping_list')
     .insert([
       {
         name: name,
