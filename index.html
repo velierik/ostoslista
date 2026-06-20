@@ -71,7 +71,32 @@ function render() {
 
   items.forEach((item) => {
     const li = document.createElement('li');
-    li.textContent = item.name;
+    li.innerHTML = "";
+
+const checkbox = document.createElement('input');
+checkbox.type = "checkbox";
+checkbox.checked = item.done;
+
+checkbox.onchange = async (e) => {
+  e.stopPropagation();
+
+  await supabaseClient
+    .from('shopping_list')
+    .update({ done: checkbox.checked })
+    .eq('id', item.id);
+
+  loadItems();
+};
+
+const span = document.createElement('span');
+span.textContent = item.name;
+
+if (item.done) {
+  span.classList.add('done');
+}
+
+li.appendChild(checkbox);
+li.appendChild(span);
     li.draggable = true;
 
     if (item.done) li.classList.add('done');
