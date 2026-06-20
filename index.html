@@ -1,0 +1,138 @@
+<!DOCTYPE html><!DOCTYPE html<head>
+  <title>Ostoslista</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    .tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px;
+      background: #eee;
+      border: none;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Ostoslista</h1>
+
+<!-- ✅ Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="setCategory(event, 'Ruokakauppa')">
+    🍎 Ruokakauppa
+  </button>
+  <button class="tab" onclick="setCategory(event, 'Muut')">
+    📦 Muut
+  </button>
+</div>
+
+<input id="itemInput" placeholder="Lisää ostos..." />
+<button onclick="addItem()">Lisää</button>
+
+<ul id="list"></ul>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+  const SUPABASE_URL = "https://nunttyodyavjjaswwskd.supabase.co" ;	
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
+ 
+
+
+
+  if (!window._supabaseClient) {
+    window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  }
+
+  var supabase = window._supabaseClient;
+
+  // ✅ aktiivinen kategoria
+  let currentCategory = "Ruokakauppa";
+
+  function setCategory(event, category) {
+    currentCategory = category;
+
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+
+    loadItems();
+  }
+
+  async function loadItems() {
+    const { data } = await supabase
+      .from('shopping_list')
+      .select('*')
+      .eq('category', currentCategory)  // ✅ tärkein muutos
+      .order('id');
+
+    const list = document.getElementById('list');
+    list.innerHTML = '';
+
+    (data || []).forEach(item => {
+      const li = document.createElement('li');
+
+      li.innerHTML = `
+        <input type="checkbox" ${item.done ? 'checked' : ''}
+          onchange="toggleDone('${item.id}', ${!item.done})" />
+        ${item.name}
+        <button onclick="deleteItem('${item.id}')">x</button>
+      `;
+
+      list.appendChild(li);
+    });
+  }
+
+  async function addItem() {
+    const input = document.getElementById('itemInput');
+    const name = input.value;
+    if (!name) return;
+
+    // ✅ tallennetaan kategoria mukaan
+    await supabase.from('shopping_list').insert([
+      { 
+        name,
+        category: currentCategory,
+        done: false
+      }
+    ]);
+
+    input.value = '';
+    loadItems();
+  }
+
+  async function toggleDone(id, value) {
+    await supabase
+      .from('shopping_list')
+      .update({ done: value })
+      .eq('id', id);
+
+    loadItems();
+  }
+
+  async function deleteItem(id) {
+    await supabase
+      .from('shopping_list')
+      .delete()
+      .eq('id', id);
+
+    loadItems();
+  }
+
+  loadItems();
+</script>
+
+</body>
+</html>
+<html>
