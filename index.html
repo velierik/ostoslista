@@ -1,138 +1,157 @@
-<!DOCTYPE html><!DOCTYPE html<head>
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
   <title>Ostoslista</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    .tabs {
-      display: flex;
-      gap: 5px;
-      margin-bottom: 10px;
-    }
-
-    .tab {
-      flex: 1;
-      padding: 8px;
-      background: #eee;
-      border: none;
-      cursor: pointer;
-    }
-
-    .tab.active {
-      background: #007bff;
-      color: white;
-    }
+    body { font-family: Arial; padding: 20px; }
+    button { margin: 5px; padding: 8px; }
+    input { padding: 8px; width: 70%; }
+    li { padding: 8px; border: 1px solid #ccc; margin: 5px 0; cursor: grab; }
+    .done { text-decoration: line-through; color: gray; }
+    .active { background: lightblue; }
   </style>
 </head>
 
 <body>
 
-<h1>Ostoslista</h1>
+<h2>Ostoslista</h2>
 
-<!-- ✅ Tabs -->
-<div class="tabs">
-  <button class="tab active" onclick="setCategory(event, 'Ruokakauppa')">
-    🍎 Ruokakauppa
-  </button>
-  <button class="tab" onclick="setCategory(event, 'Muut')">
-    📦 Muut
-  </button>
+<!-- TABIT -->
+<div>
+  <button onclick="setCategory('Ruokakauppa')" id="tab-Ruokakauppa">Ruokakauppa</button>
+  <button onclick="setCategory('Muut')" id="tab-Muut">Muut</button>
 </div>
 
-<input id="itemInput" placeholder="Lisää ostos..." />
+<br>
+
+<input id="newItem" placeholder="Lisää ostos">
 <button onclick="addItem()">Lisää</button>
 
 <ul id="list"></ul>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
-  const SUPABASE_URL = "https://nunttyodyavjjaswwskd.supabase.co" ;	
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
+const SUPABASE_URL = "https://nunttyodyavjjaswwskd.supabase.co" ;	
+ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
  
 
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+let currentCategory = "Ruokakauppa";
+let items = [];
 
-  if (!window._supabaseClient) {
-    window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ✅ Lataa data
+async function loadItems() {
+  const { data, error } = await supabase
+    .from('ostoslista')
+    .select('*')
+    .eq('category', currentCategory)
+    .order('order_index', { ascending: true });
+
+  if (error) console.error(error);
+
+  items = data || [];
+  render();
+}
+
+// ✅ Renderöi lista
+function render() {
+  const list = document.getElementById('list');
+  list.innerHTML = "";
+
+  items.forEach((item) => {
+    const li = document.createElement('li');
+    li.textContent = item.name;
+    li.draggable = true;
+
+    if (item.done) li.classList.add('done');
+
+    // toggle done
+    li.onclick = async () => {
+      await supabase
+        .from('ostoslista')
+        .update({ done: !item.done })
+        .eq('id', item.id);
+      loadItems();
+    };
+
+    // drag events
+    li.ondragstart = (e) => {
+      e.dataTransfer.setData("text/plain", item.id);
+    };
+
+    li.ondragover = (e) => e.preventDefault();
+
+    li.ondrop = async (e) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData("text/plain");
+
+      const fromIndex = items.findIndex(i => i.id == draggedId);
+      const toIndex = items.findIndex(i => i.id == item.id);
+
+      const moved = items.splice(fromIndex, 1)[0];
+      items.splice(toIndex, 0, moved);
+
+      await updateOrder();
+      render();
+    };
+
+    list.appendChild(li);
+  });
+
+  updateTabs();
+}
+
+// ✅ Päivitä järjestys Supabaseen
+async function updateOrder() {
+  for (let i = 0; i < items.length; i++) {
+    await supabase
+      .from('ostoslista')
+      .update({ order_index: i })
+      .eq('id', items[i].id);
   }
+}
 
-  var supabase = window._supabaseClient;
+// ✅ Lisää item
+async function addItem() {
+  const input = document.getElementById('newItem');
+  const name = input.value.trim();
+  if (!name) return;
 
-  // ✅ aktiivinen kategoria
-  let currentCategory = "Ruokakauppa";
-
-  function setCategory(event, category) {
-    currentCategory = category;
-
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-
-    loadItems();
-  }
-
-  async function loadItems() {
-    const { data } = await supabase
-      .from('shopping_list')
-      .select('*')
-      .eq('category', currentCategory)  // ✅ tärkein muutos
-      .order('id');
-
-    const list = document.getElementById('list');
-    list.innerHTML = '';
-
-    (data || []).forEach(item => {
-      const li = document.createElement('li');
-
-      li.innerHTML = `
-        <input type="checkbox" ${item.done ? 'checked' : ''}
-          onchange="toggleDone('${item.id}', ${!item.done})" />
-        ${item.name}
-        <button onclick="deleteItem('${item.id}')">x</button>
-      `;
-
-      list.appendChild(li);
-    });
-  }
-
-  async function addItem() {
-    const input = document.getElementById('itemInput');
-    const name = input.value;
-    if (!name) return;
-
-    // ✅ tallennetaan kategoria mukaan
-    await supabase.from('shopping_list').insert([
-      { 
+  await supabase
+    .from('ostoslista')
+    .insert([
+      {
         name,
+        done: false,
         category: currentCategory,
-        done: false
+        order_index: items.length
       }
     ]);
 
-    input.value = '';
-    loadItems();
-  }
-
-  async function toggleDone(id, value) {
-    await supabase
-      .from('shopping_list')
-      .update({ done: value })
-      .eq('id', id);
-
-    loadItems();
-  }
-
-  async function deleteItem(id) {
-    await supabase
-      .from('shopping_list')
-      .delete()
-      .eq('id', id);
-
-    loadItems();
-  }
-
+  input.value = "";
   loadItems();
+}
+
+// ✅ Vaihda kategoria
+function setCategory(cat) {
+  currentCategory = cat;
+  loadItems();
+}
+
+// ✅ Korosta aktiivinen tab
+function updateTabs() {
+  document.getElementById('tab-Ruokakauppa').classList.remove('active');
+  document.getElementById('tab-Muut').classList.remove('active');
+
+  document.getElementById('tab-' + currentCategory).classList.add('active');
+}
+
+// käynnistys
+loadItems();
+
 </script>
 
 </body>
 </html>
-<html>
