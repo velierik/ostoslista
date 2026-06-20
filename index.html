@@ -14,6 +14,26 @@
     li { padding: 8px; border: 1px solid #ccc; margin: 5px 0; cursor: grab; }
     .done { text-decoration: line-through; color: gray; }
     .active { background: lightblue; }
+    li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.item-left input {
+  width: auto;
+  margin: 0;
+}
+
+.item-text {
+  flex-grow: 1;
+}
   </style>
 </head>
 
