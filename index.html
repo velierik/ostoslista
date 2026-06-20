@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta charset="UTF-8">
   <title>Ostoslista</title>
+
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -36,27 +37,33 @@
 <script>
 const SUPABASE_URL = "https://nunttyodyavjjaswwskd.supabase.co" ;	
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
-  
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+ 
+
+
+// ✅ TÄRKEÄ: käytä eri nimeä kuin 'supabase'
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentCategory = "Ruokakauppa";
 let items = [];
 
-// ✅ Lataa data
+// 🔹 Lataa data
 async function loadItems() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from('ostoslista')
     .select('*')
     .eq('category', currentCategory)
     .order('order_index', { ascending: true });
 
-  if (error) console.error(error);
+  if (error) {
+    console.error(error);
+    return;
+  }
 
   items = data || [];
   render();
 }
 
-// ✅ Renderöi lista
+// 🔹 Renderöi
 function render() {
   const list = document.getElementById('list');
   list.innerHTML = "";
@@ -70,22 +77,26 @@ function render() {
 
     // toggle done
     li.onclick = async () => {
-      await supabase
+      await supabaseClient
         .from('ostoslista')
         .update({ done: !item.done })
         .eq('id', item.id);
+
       loadItems();
     };
 
-    // drag events
+    // drag start
     li.ondragstart = (e) => {
       e.dataTransfer.setData("text/plain", item.id);
     };
 
+    // drag over
     li.ondragover = (e) => e.preventDefault();
 
+    // drop
     li.ondrop = async (e) => {
       e.preventDefault();
+
       const draggedId = e.dataTransfer.getData("text/plain");
 
       const fromIndex = items.findIndex(i => i.id == draggedId);
@@ -104,27 +115,27 @@ function render() {
   updateTabs();
 }
 
-// ✅ Päivitä järjestys Supabaseen
+// 🔹 Tallenna järjestys
 async function updateOrder() {
   for (let i = 0; i < items.length; i++) {
-    await supabase
+    await supabaseClient
       .from('ostoslista')
       .update({ order_index: i })
       .eq('id', items[i].id);
   }
 }
 
-// ✅ Lisää item
+// 🔹 Lisää item
 async function addItem() {
   const input = document.getElementById('newItem');
   const name = input.value.trim();
   if (!name) return;
 
-  await supabase
+  await supabaseClient
     .from('ostoslista')
     .insert([
       {
-        name,
+        name: name,
         done: false,
         category: currentCategory,
         order_index: items.length
@@ -135,13 +146,13 @@ async function addItem() {
   loadItems();
 }
 
-// ✅ Vaihda kategoria
+// 🔹 Vaihda kategoria
 function setCategory(cat) {
   currentCategory = cat;
   loadItems();
 }
 
-// ✅ Korosta aktiivinen tab
+// 🔹 Päivitä tab UI
 function updateTabs() {
   document.getElementById('tab-Ruokakauppa').classList.remove('active');
   document.getElementById('tab-Muut').classList.remove('active');
@@ -149,7 +160,7 @@ function updateTabs() {
   document.getElementById('tab-' + currentCategory).classList.add('active');
 }
 
-// käynnistys
+// start
 loadItems();
 
 </script>
