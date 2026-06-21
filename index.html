@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+
+<! 21.6. Lisää ostos laatikon kavennus !>
+<! 21.6. Lisätty kuvia !>
+<! 21.6. Lisätty ikonit ostoksille !>
+
+
+
 <html lang="fi">
 <head>
   <meta charset="UTF-8">
@@ -7,19 +14,56 @@
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    body { font-family: Arial; padding: 20px; }
-    button { margin: 5px; padding: 8px; }
-    input { padding: 8px; width: 70%; }
-    li { padding: 8px; border: 1px solid #ccc; margin: 5px 0; cursor: grab; }
-    .done { text-decoration: line-through; color: gray; }
-    .active { background: lightblue; }
-    li {
+<style>
+body { font-family: Arial; padding: 20px; }
+
+button { margin: 5px; padding: 8px; }
+
+input { padding: 8px; width: 70%; }
+
+li {
+  padding: 8px;
+  border: 1px solid #ccc;
+  margin: 5px 0;
+  cursor: grab;
+
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
 }
 
+.done {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.active {
+  background: lightblue;
+}
+
+/* ✅ Lisää-rivi */
+.add-row {
+  display: flex;
+  gap: 10px;
+  max-width: 500px;
+}
+
+.add-row input {
+  flex: 1;
+  width: auto;   /* 🔥 tämä korjaa leveyden */
+}
+
+.add-row button {
+  flex: 0;
+}
+
+/* ✅ checkbox */
+input[type="checkbox"] {
+  width: auto;
+  padding: 0;
+}
+
+/* ✅ item layout */
 .item-left {
   display: flex;
   align-items: center;
@@ -34,7 +78,40 @@
 .item-text {
   flex-grow: 1;
 }
+
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+
+/* 🔥 IKONI KUNNOLLISEKSI */
+.icon {
+  font-size: 20px;   /* suurempi */
+}
+
+/* 🔥 VÄRI KATEGORIALLE */
+#tab-Ruokakauppa {
+  background-color: #e3f2fd;
+}
+
+#tab-Ruokakauppa .icon {
+  color: #1976d2;   /* sininen */
+}
+
+/* aktiivinen tila */
+#tab-Ruokakauppa.active {
+  background-color: #90caf9;
+}
+``
+
+
   </style>
+
 </head>
 
 <body>
@@ -44,14 +121,27 @@
 
 <!-- TABIT -->
 <div>
-  <button onclick="setCategory('Ruokakauppa')" id="tab-Ruokakauppa">Ruokakauppa</button>
-  <button onclick="setCategory('Muut')" id="tab-Muut">Muut</button>
-</div>
+
+<button onclick="setCategory('Ruokakauppa')" id="tab-Ruokakauppa">
+  <span class="icon">🛒</span>
+  Ruokakauppa
+</button>
+
+<button onclick="setCategory('Muut')" id="tab-Muut">
+    <span class="icon">🧰</span>
+    Muut
+  </button>
+
+
+  </div>
 
 <br>
 
-<input id="newItem" placeholder="Lisää ostos">
-<button onclick="addItem()">Lisää</button>
+
+<div class="add-row">
+  <input id="newItem" placeholder="Lisää ostos">
+  <button onclick="addItem()">Lisää</button>
+</div>
 
 <ul id="list"></ul>
 
@@ -59,6 +149,34 @@
 const SUPABASE_URL = "https://nunttyodyavjjaswwskd.supabase.co" ;	
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51bnR0eW9keWF2amphc3d3c2tkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NzEyODcsImV4cCI6MjA5NzM0NzI4N30.C6_pSgqkW2JKVCU478cmOnKQ7VD51joWGFML3W_vdjM";
  
+
+function getIcon(name) {
+  const n = name.toLowerCase();
+
+  if (n.includes("omena")) return "🍎";
+  if (n.includes("banaani")) return "🍌";
+  if (n.includes("maito")) return "🥛";
+  if (n.includes("leip")) return "🍞";
+  if (n.includes("juusto")) return "🧀";
+  if (n.includes("kana")) return "🍗";
+ if (n.includes("salaatti")) return "🥬";
+if (n.includes("vichy")) return "🫧";
+if (n.includes("sitruuna")) return "🍋";
+if (n.includes("mehu")) return "🧃";
+if (n.includes("jugurt")) return "🥣";
+if (n.includes("öljy")) return "🫒";
+if (n.includes("pesuaine")) return "🧴";
+if (n.includes("appelsiini")) return "🍊";
+if (n.includes("margariini")) return "🧈";
+if (n.includes("viili")) return "🥣";
+if (n.includes("feta")) return "🧀";
+if (n.includes("näkkäri") || n.includes("näkkileipä")) return "🍞";
+if (n.includes("suklaariisi") || n.includes("pikkuleipä")) return "🍪";
+if (n.includes("pesu")) return "🧴";
+
+
+  return "🛒"; // default
+}
 
 
 // ✅ TÄRKEÄ: käytä eri nimeä kuin 'supabase'
@@ -108,16 +226,46 @@ checkbox.onchange = async (e) => {
   loadItems();
 };
 
+
 const span = document.createElement('span');
-span.textContent = item.name;
+
+const icon = getIcon(item.name);
+
+span.textContent = icon + " " + item.name;
+
 
 if (item.done) {
   span.classList.add('done');
 }
 
-li.appendChild(checkbox);
-li.appendChild(span);
-    li.draggable = true;
+
+const left = document.createElement('div');
+left.style.display = "flex";
+left.style.alignItems = "center";
+left.style.gap = "8px";
+
+left.appendChild(checkbox);
+left.appendChild(span);
+
+li.appendChild(left);
+
+const deleteBtn = document.createElement('button');
+deleteBtn.textContent = "❌";
+
+deleteBtn.onclick = async (e) => {
+  e.stopPropagation();
+
+  await supabaseClient
+    .from('shopping_list')
+    .delete()
+    .eq('id', item.id);
+
+  loadItems();
+};
+
+li.appendChild(deleteBtn);
+
+li.draggable = true;
 
     if (item.done) li.classList.add('done');
 
@@ -144,7 +292,15 @@ li.appendChild(span);
       items.splice(toIndex, 0, moved);
 
       await updateOrder();
-      render();
+    
+// ✅ päivitä UI heti lokaalisti
+render();
+
+// ✅ varmista backend synkassa
+setTimeout(() => {
+  loadItems();
+}, 200);
+
     };
 
     list.appendChild(li);
@@ -169,16 +325,20 @@ async function addItem() {
   const name = input.value.trim();
   if (!name) return;
 
+  // 🔹 haetaan pienin position nykyisessä kategoriassa
+  const minPosition = items.length > 0
+    ? Math.min(...items.map(i => i.position))
+    : 0;
+
+  // 🔹 lisätään uusi tätä pienempänä → menee ykköseksi
   await supabaseClient
     .from('shopping_list')
-    .insert([
-      {
-        name: name,
-        done: false,
-        category: currentCategory,
-        position: items.length
-      }
-    ]);
+    .insert([{
+      name: name,
+      done: false,
+      category: currentCategory,
+      position: minPosition - 1
+    }]);
 
   input.value = "";
   loadItems();
